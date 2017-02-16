@@ -366,7 +366,7 @@ function onCall(num) {
 	//protect if already in communication
 	console.log('CALL FROM: ' + number.max(num))
 	//TODO: check subscriber
-	if (number.std(num) == flo) {
+	/*if (number.std(num) == flo) {
 		console.log('This is FLO!')
 		addToStack({
 			a: 'call_in',
@@ -377,7 +377,7 @@ function onCall(num) {
 			}
 		}, true)
 		write('ATA\r')
-	}
+	}*/
 
 	db.addCallRecv(Math.floor(new Date()), number.sys(num))
 }
