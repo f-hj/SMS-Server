@@ -67,4 +67,10 @@ router.get('/transactions', (req, res) => {
   })
 })
 
+router.get('/stopped', (req, res) => {
+  db.getStopped((err, l) => {
+    res.json(l)
+  })
+})
+
 module.exports = router

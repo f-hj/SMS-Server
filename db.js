@@ -120,6 +120,14 @@ module.exports = {
         })
       })
     })
+  },
+  getStopped: (num, cb) => {
+    if (typeof num == 'function') {
+      cb = num
+      db.all("SELECT * FROM stopped", cb)
+    } else {
+      db.all("SELECT * FROM stopped WHERE number = ?", [num], cb)
+    }
   }
 }
 
