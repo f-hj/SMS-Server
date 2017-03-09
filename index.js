@@ -93,18 +93,23 @@ port.on('data', function (data) {
         stack[0].nbTry++;
         if (stack[0].nbTry == 5) {
           if (typeof stack[0].onError == 'function') {
-            //TODO: generate error
-            stack[0].onError({
-              type: 'cms',
-              code: 304,
-              msg: 'pdu_error'
-            })
+            stack[0].onError(parseErr(log))
           }
           onStackItemDone();
         } else {
           smsS1();
         }
-      }
+      } else if (log.indexOf('ERROR') != -1 && stack[0] && stack[0].a == 'msg') {
+				if (typeof stack[0].onError == 'function') {
+					stack[0].onError(parseErr(log))
+				}
+				onStackItemDone();
+			} else if (log.indexOf('+CME ERROR:58') != -1) {
+				if (stack[0] && typeof stack[0].onError == 'function') {
+					stack[0].onError(parseErr(log))
+				}
+				onStackItemDone()
+			}
 			if (log.indexOf('+CREG=') != -1) {
 				if (log.indexOf('0,2') != -1) {
 					state = 'searching'
@@ -122,12 +127,6 @@ port.on('data', function (data) {
 			if (log.indexOf('+CSQ:') != -1) {
 				var l = log.split(' ')[1].split(',')[0]
 				quality = l
-			}
-			if (log.indexOf('+CME ERROR:58') != -1) {
-				if (stack[0] && typeof stack[0].onError == 'function') {
-					stack[0].onError(parseErr(log))
-				}
-				onStackItemDone()
 			}
 			if (log.indexOf('+CMT:') != -1) {
 				nextIsSms = true
@@ -279,7 +278,9 @@ app.post('/msg', (req, res) => {
   		number: req.body.number,
   		text: req.body.text,
   		onSent: () => {
-  			res.end('sent')
+  			res.json({
+					success: true
+				})
   		},
   		onError: (err) => {
   			res.json({
@@ -553,9 +554,12 @@ function getMsgError(type, code) {
 			switch(code) {
 				case 500:
 					return 'unknown_error'
+				case 304:
+					return 'pdu_error'
 			}
 		}
 	}
+	return 'error_unregistred'
 }
 
 function authorizedNumber(num) {
