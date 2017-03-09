@@ -123,7 +123,7 @@ port.on('data', function (data) {
 				var l = log.split(' ')[1].split(',')[0]
 				quality = l
 			}
-			if (log.indexOf('+CME ERROR:58') == -1) {
+			if (log.indexOf('+CME ERROR:58') != -1) {
 				if (stack[0] && typeof stack[0].onError == 'function') {
 					stack[0].onError(parseErr(log))
 				}
@@ -253,7 +253,7 @@ app.post('/msg', (req, res) => {
     return
   }
 
-  db.getStopped(req.body.number, (err, rows) {
+  db.getStopped(req.body.number, (err, rows) => {
     if (err) {
       res.json({
         err: {
@@ -561,7 +561,7 @@ function getMsgError(type, code) {
 function authorizedNumber(num) {
 	num = number.std(num)
 	if (num && num.length == 10) {
-		if (num[0] == '0' && num[1] == '1' && num[1] == '2' && num[1] == '3' && num[1] == '4' && num[1] == '5' && num[1] == '6' && num[1] == '7' && num[1] == '9') {
+		if (num[0] == '0' && (num[1] == '1' || num[1] == '2' || num[1] == '3' || num[1] == '4' || num[1] == '5' || num[1] == '6' || num[1] == '7' || num[1] == '9')) {
 			return true
 		}
 	}
