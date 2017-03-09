@@ -453,7 +453,7 @@ function onMessage(msg) {
 
 	console.log(msg)
 	if (msg.udh) {
-		db.addMsgRecv(Math.floor(msg.time), msg.sender, msg.text, udh.reference_number, udh.parts, udh.current_part)
+		db.addMsgRecv(Math.floor(msg.time), msg.sender, msg.text, msg.udh.reference_number, msg.udh.parts, msg.udh.current_part)
 	} else {
 		db.addMsgRecv(Math.floor(msg.time), msg.sender, msg.text)
 	}
