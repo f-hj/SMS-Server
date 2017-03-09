@@ -312,11 +312,19 @@ app.post('/subscribe', (req, res) => {
 		if (t) {
 			if (t == req.locals.user) {
 				return res.json({
-					err: 'already used by you'
+					err: {
+						code: 21,
+						type: 'internal',
+						msg: 'you_used'
+					}
 				})
 			}
 			return res.json({
-				err: 'already used by other'
+				err: {
+					code: 20,
+					type: 'internal',
+					msg: 'other_used'
+				}
 			})
 		}
 
@@ -406,6 +414,12 @@ app.post('/command', (req, res) => {
 	}
 })
 
+app.get('/estimateTimeStack', (req, res) => {
+	res.json({
+		time: estimateTimeStack()
+	})
+})
+
 function write(t, c) {
 	console.log()
 	console.log('PC: ' + t + '\n')
@@ -436,26 +450,29 @@ function onCall(num) {
 
 function onMessage(msg) {
 	//TODO: check subscriber
-	if (msg.text.toLowerCase() == 'contact') {
+
+	console.log(msg)
+	if (msg.udh) {
+		db.addMsgRecv(Math.floor(msg.time), msg.sender, msg.text, udh.reference_number, udh.parts, udh.current_part)
+	} else {
+		db.addMsgRecv(Math.floor(msg.time), msg.sender, msg.text)
+	}
+
+
+
+	if (msg.text && msg.text.toLowerCase().trim() == 'contact') {
 		addToStack({
 			a: 'msg',
 			number: number.sys(msg.sender),
 			text: "Madame Nadine ROUSSEAU, SIRET: 33931458500078. SMS non surtaxé."
 		})
-	} else if (msg.text.toLowerCase() == 'stop') {
+	} else if (msg.text && msg.text.toLowerCase().trim() == 'stop') {
 		db.addStopped(number.sys(msg.sender))
 		addToStack({
 			a: 'msg',
 			number: number.sys(msg.sender),
 			text: 'Vous avez été supprimé de la liste de diffusion. SMS non surtaxé.'
 		})
-	} else {
-		console.log(msg)
-		if (msg.udh) {
-			db.addMsgRecv(Math.floor(msg.time), msg.sender, msg.text, udh.reference_number, udh.parts, udh.current_part)
-		} else {
-			db.addMsgRecv(Math.floor(msg.time), msg.sender, msg.text)
-		}
 	}
 }
 
@@ -521,8 +538,9 @@ function onOK(func) {
 	}
 	if (typeof okFunc == 'function') {
     online = true
-		okFunc()
+		var okNext = okFunc
 		okFunc = undefined
+		okNext()
 	}
 }
 
@@ -585,6 +603,7 @@ function estimateTimeStack() {
 			time += 5 * 1000
 		}
 	})
+	return time
 }
 
 var number = {
