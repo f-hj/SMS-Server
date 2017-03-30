@@ -77,6 +77,7 @@ port.on('data', function (data) {
 			}
 			if (log.indexOf('+CMGS:') != -1) {
 				stack[0].nbPduDone++
+				clearTimeout(stack[0].timeout)
         onOK(() => {
   				if (stack[0].nbPduDone == stack[0].nbPdu) {
   					if (typeof stack[0].onSent == 'function') {
@@ -89,7 +90,7 @@ port.on('data', function (data) {
   				}
         })
 			}
-      if (log.indexOf('+CMS ERROR:304') != -1 && stack[0] && stack[0].a == 'msg') {
+      if (log.indexOf('+CMS ERROR:304') != -1 && stack[0] && stack[0].a == 'msg' && !stack[0].error) {
         stack[0].nbTry++;
         if (stack[0].nbTry == 5) {
           if (typeof stack[0].onError == 'function') {
@@ -99,12 +100,12 @@ port.on('data', function (data) {
         } else {
           smsS1();
         }
-      } else if (log.indexOf('ERROR') != -1 && stack[0] && stack[0].a == 'msg') {
+      } else if (log.indexOf('ERROR') != -1 && stack[0] && stack[0].a == 'msg' && !stack[0].error) {
 				if (typeof stack[0].onError == 'function') {
 					stack[0].onError(parseErr(log))
 				}
 				onStackItemDone();
-			} else if (log.indexOf('+CME ERROR:58') != -1) {
+			} else if (log.indexOf('+CME ERROR:58') != -1 && !stack[0].error) {
 				if (stack[0] && typeof stack[0].onError == 'function') {
 					stack[0].onError(parseErr(log))
 				}
@@ -509,6 +510,7 @@ function work(obj) {
 		obj.nbPdu = pdus.length
 		obj.nbPduDone = 0
     obj.nbTry = 0
+		obj.nbErr = 0
 		smsS1()
 	} else {
     console.log('error, not usable object');
@@ -520,10 +522,27 @@ function smsS1() {
 	var pdul = stack[0].pdus[stack[0].nbPduDone]
 	stack[0].done = false
 	write('AT+CMGS=' + ((pdul.length/2)-1) + '\r')
+	stack[0].timeout = setTimeout(() => {
+		stack[0].nbErr++
+		stack[0].error = true
+		write('\r\r');
+		setTimeout(() => {
+			stack[0].error = false
+			if (stack[0].nbErr == 3) {
+				stack[0].onError({
+					type: 'internal',
+					code: 10000,
+					msg: 'gsm timeout'
+				})
+				return onStackItemDone()
+			}
+			smsS1()
+		}, 1000)
+	}, 10 * 1000)
 }
 
 function smsS2() {
-	if (!stack[0].done) {
+	if (!stack[0].done && !stack[0].error) {
 		var pdul = stack[0].pdus[stack[0].nbPduDone]
 		write(pdul + String.fromCharCode(26) + '\r')
 		stack[0].done = true
