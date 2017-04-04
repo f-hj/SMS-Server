@@ -90,8 +90,8 @@ port.on('data', function (data) {
   				}
         })
 			}
-      if (log.indexOf('+CMS ERROR:304') != -1 && stack[0] && stack[0].a == 'msg' && !stack[0].error) {
-        stack[0].nbTry++;
+      if (log.indexOf('ERROR') != -1 && stack[0] && stack[0].a == 'msg' && !stack[0].error) {
+				stack[0].nbTry++;
         if (stack[0].nbTry == 5) {
           if (typeof stack[0].onError == 'function') {
             stack[0].onError(parseErr(log))
@@ -100,11 +100,6 @@ port.on('data', function (data) {
         } else {
           smsS1();
         }
-      } else if (log.indexOf('ERROR') != -1 && stack[0] && stack[0].a == 'msg' && !stack[0].error) {
-				if (typeof stack[0].onError == 'function') {
-					stack[0].onError(parseErr(log))
-				}
-				onStackItemDone();
 			} else if (log.indexOf('+CME ERROR:58') != -1 && !stack[0].error) {
 				if (stack[0] && typeof stack[0].onError == 'function') {
 					stack[0].onError(parseErr(log))
@@ -280,7 +275,10 @@ app.post('/msg', (req, res) => {
   		text: req.body.text,
   		onSent: () => {
   			res.json({
-					success: true
+					success: true,
+					nbTry: stack[0].nbTry,
+					nbErr: stack[0].nbErr,
+					nbPdu: stack[0].nbPdu
 				})
   		},
   		onError: (err) => {
